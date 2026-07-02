@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#F8F0E1">
 <meta name="color-scheme" content="light">
+<meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="description" content="A little love note, brewed with warmth.">
 <title>A Little Note, Brewed With Love</title>
 
@@ -385,7 +386,113 @@ section{ padding: var(--section-pad) 0; }
 }
 
 /* ==========================================================================
-   11. RESPONSIVE REFINEMENTS
+   11. PRIVACY GATE — soft shared-password screen
+   ========================================================================== */
+.gate{
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(60% 50% at 50% 20%, rgba(227,201,160,0.55), transparent 70%),
+    var(--cream);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.gate.is-unlocked{
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.gate-card{
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.gate-icon{
+  width: 52px;
+  color: var(--mocha);
+  margin-bottom: 1rem;
+}
+.gate-title{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.45rem;
+  color: var(--espresso);
+  margin-bottom: 0.4rem;
+}
+.gate-message{
+  font-size: 0.95rem;
+  color: #5A4028;
+  margin-bottom: 1.5rem;
+}
+/* Visually hidden but still announced by screen readers */
+.gate-label{
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.gate-input{
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.75rem 1.1rem;
+  border: 1px solid var(--latte);
+  border-radius: 999px;
+  background: var(--petal);
+  color: var(--espresso);
+  text-align: center;
+}
+.gate-input:focus-visible{
+  outline: 2px solid var(--mocha);
+  outline-offset: 2px;
+}
+.gate-button{
+  margin-top: 0.85rem;
+  width: 100%;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--mocha);
+  color: var(--petal);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.gate-button:hover{ background: var(--espresso); }
+.gate-button:focus-visible{ outline: 2px solid var(--mocha); outline-offset: 2px; }
+.gate-error{
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  color: #A23B2E;
+  min-height: 1.2em;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.gate-error.is-visible{ opacity: 1; }
+.gate-card.shake{ animation: gateShake 0.4s ease; }
+@keyframes gateShake{
+  0%, 100%{ transform: translateX(0); }
+  20%{ transform: translateX(-8px); }
+  40%{ transform: translateX(8px); }
+  60%{ transform: translateX(-6px); }
+  80%{ transform: translateX(6px); }
+}
+
+/* ==========================================================================
+   12. RESPONSIVE REFINEMENTS
    ========================================================================== */
 @media (min-width: 640px){
   .note-card{ transform: rotate(-1.6deg); }
@@ -396,7 +503,7 @@ section{ padding: var(--section-pad) 0; }
 }
 
 /* ==========================================================================
-   12. MOTION ACCESSIBILITY
+   13. MOTION ACCESSIBILITY
    ========================================================================== */
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{
@@ -490,6 +597,22 @@ body.is-hidden .petal{
 
   </defs>
 </svg>
+
+<!-- ==========================================================================
+     PRIVACY GATE — a soft, shared-password screen. See the JS comment
+     near the bottom of the file for what this does and doesn't protect.
+     ========================================================================== -->
+<div class="gate" id="gate">
+  <form class="gate-card" id="gateForm">
+    <svg class="gate-icon" viewBox="-105 -105 210 205" aria-hidden="true"><use href="#lily-bloom"/></svg>
+    <p class="gate-title" id="gateTitle"></p>
+    <p class="gate-message" id="gateMessage"></p>
+    <label class="gate-label" for="gateInput">Password</label>
+    <input class="gate-input" id="gateInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="gate-button" type="submit" id="gateButton"></button>
+    <p class="gate-error" id="gateError" aria-live="polite"></p>
+  </form>
+</div>
 
 <!-- ==========================================================================
      HERO — heartfelt welcome
@@ -654,6 +777,18 @@ body.is-hidden .petal{
    ========================================================================== */
 const CONFIG = {
 
+  // ---- PRIVACY GATE ----
+  // A simple shared password so the page isn't wide open to anyone who
+  // stumbles on the link. This is a SOFT gate, not real security — the
+  // text below still ships inside this file, so it's about keeping out
+  // search engines and casual passersby, not a determined snooper.
+  // Change this to whatever you like, then tell her the password
+  // separately from the link itself.
+  sitePassword: "brewedwithlove",
+  gateTitle: "This little corner is just for you",
+  gateMessage: "Enter our password to open it.",
+  gateButtonText: "Open",
+
   // Small uppercase label above the hero title
   heroEyebrow: "a little note, brewed with love",
 
@@ -707,6 +842,9 @@ const CONFIG = {
   set('quoteSignature', CONFIG.quoteSignature);
   set('footerNote', CONFIG.footerNote);
   set('footerSignature', CONFIG.footerSignature);
+  set('gateTitle', CONFIG.gateTitle);
+  set('gateMessage', CONFIG.gateMessage);
+  set('gateButton', CONFIG.gateButtonText);
 })();
 
 /* ==========================================================================
@@ -773,6 +911,43 @@ const CONFIG = {
   const sync = () => document.body.classList.toggle('is-hidden', document.hidden);
   document.addEventListener('visibilitychange', sync);
   sync();
+})();
+
+/* ==========================================================================
+   Soft password gate. Not real security — everything above still ships
+   inside this file's source, so anyone who deliberately views-source can
+   read it regardless. This just keeps the page from being wide open to
+   search engines or anyone who stumbles across the link by accident.
+   ========================================================================== */
+(function passwordGate(){
+  const STORAGE_KEY = 'flowerGateUnlocked';
+  const gate = document.getElementById('gate');
+  const form = document.getElementById('gateForm');
+  const input = document.getElementById('gateInput');
+  const error = document.getElementById('gateError');
+  const normalize = (s) => s.trim().toLowerCase();
+
+  if(localStorage.getItem(STORAGE_KEY) === 'true'){
+    gate.classList.add('is-unlocked');
+    return;
+  }
+
+  input.focus();
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if(normalize(input.value) === normalize(CONFIG.sitePassword)){
+      localStorage.setItem(STORAGE_KEY, 'true');
+      gate.classList.add('is-unlocked');
+    } else {
+      error.textContent = "That's not quite it — try again.";
+      error.classList.add('is-visible');
+      form.classList.remove('shake');
+      void form.offsetWidth; // restart the shake animation on repeat wrong tries
+      form.classList.add('shake');
+      input.select();
+    }
+  });
 })();
 </script>
 </body>
