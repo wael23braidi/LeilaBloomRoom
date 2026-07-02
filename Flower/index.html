@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F8F0E1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="A little love note, brewed with warmth.">
+<title>A Little Note, Brewed With Love</title>
+
+<!-- So the page shows a warm title + message card, not a bare link, when
+     it's shared/pasted into WhatsApp, iMessage, Telegram, etc. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="A Little Note, Brewed With Love">
+<meta property="og:description" content="A little love note, brewed with warmth.">
+<meta name="twitter:card" content="summary">
+
+<!-- Small lily favicon, drawn inline so nothing external is required -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233B2417'/%3E%3Cpath d='M50 30C40 42 40 62 50 78C60 62 60 42 50 30Z' fill='%23FBF5EA'/%3E%3Cpath d='M50 30C38 36 30 52 30 68C42 66 50 50 50 30Z' fill='%23F3E6CF'/%3E%3Cpath d='M50 30C62 36 70 52 70 68C58 66 50 50 50 30Z' fill='%23F3E6CF'/%3E%3C/svg%3E">
+
+<!-- Google Fonts: Fraunces (warm display serif), Cairo (bilingual body), Aref Ruqaa (Arabic display), Petit Formal Script (signature accents only) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Cairo:wght@300;400;500;600;700&family=Aref+Ruqaa:wght@400;700&family=Petit+Formal+Script&display=swap" rel="stylesheet">
+
+<style>
+
+/* ==========================================================================
+   1. DESIGN TOKENS — palette, type, spacing
+   Edit colors or fonts here and they cascade through the whole page.
+   ========================================================================== */
+:root{
+  /* -- Colors: lily whites + coffee warmth. No pink anywhere on purpose. -- */
+  --cream:        #F8F0E1;  /* page background — warm ivory */
+  --cream-soft:   #F1E4CC;  /* secondary panels / latte foam */
+  --latte:        #E3C9A0;  /* borders, dividers, saucer tone */
+  --mocha:        #8A5D3B;  /* primary accent — mid roast brown */
+  --mocha-deep:   #6B4423;  /* mocha, darkened for AA text contrast on --cream-soft */
+  --espresso:     #3B2417;  /* headings & body text — dark roast */
+  --petal:        #FFFDF7;  /* lily petal white */
+  --sage:         #92A07A;  /* muted leaf green, used sparingly */
+  --gold:         #C39A5C;  /* stamens & fine accents */
+
+  /* -- Type roles -- */
+  --font-display: 'Fraunces', 'Georgia', serif;         /* English headlines */
+  --font-arabic:  'Aref Ruqaa', serif;                   /* the Arabic phrase */
+  --font-body:    'Cairo', 'Segoe UI', sans-serif;       /* bilingual body/UI */
+  --font-script:  'Petit Formal Script', cursive;        /* signatures only */
+
+  /* -- Rhythm -- */
+  --column: 700px;
+  --section-pad: clamp(4.5rem, 9vw, 7.5rem);
+  --side-pad: clamp(1.25rem, 6vw, 3rem);
+}
+
+/* ==========================================================================
+   2. RESET & BASE
+   ========================================================================== */
+*, *::before, *::after{ box-sizing: border-box; }
+html{
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+body{
+  margin: 0;
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  /* Belt-and-suspenders with the <meta name="color-scheme"> tag — stops
+     phones in dark mode from auto-inverting this warm palette. */
+  color-scheme: light;
+}
+h1, h2, h3, p{ margin: 0; }
+img, svg{ display: block; max-width: 100%; }
+
+/* Subtle warm paper grain over the whole page — cozy, not grungy */
+.texture{
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   3. FLOATING PETALS — ambient background layer (JS-populated)
+   ========================================================================== */
+.petal-field{
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.petal{
+  position: absolute;
+  top: -8vh;
+  left: var(--x, 50%);
+  width: var(--size, 18px);
+  opacity: 0;
+  color: var(--petal-color, var(--petal));
+  filter: drop-shadow(0 2px 3px rgba(59,36,23,0.08));
+  animation: drift var(--duration, 18s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform, opacity;
+}
+@keyframes drift{
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  8%   { opacity: var(--op, 0.65); }
+  92%  { opacity: var(--op, 0.65); }
+  100% { transform: translate3d(var(--drift-x, 40px), 112vh, 0) rotate(340deg); opacity: 0; }
+}
+
+/* ==========================================================================
+   4. LAYOUT SHELL
+   ========================================================================== */
+main, header, footer{ position: relative; z-index: 3; }
+.inner{
+  max-width: var(--column);
+  margin: 0 auto;
+  padding-left: var(--side-pad);
+  padding-right: var(--side-pad);
+}
+section{ padding: var(--section-pad) 0; }
+
+/* Scroll-reveal (progressively enhanced by JS/IntersectionObserver) */
+.reveal{
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+.reveal.is-visible{ opacity: 1; transform: translateY(0); }
+
+/* ==========================================================================
+   5. HERO
+   ========================================================================== */
+.hero{
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background:
+    radial-gradient(60% 50% at 50% 12%, rgba(227,201,160,0.55), transparent 70%),
+    radial-gradient(70% 60% at 85% 90%, rgba(146,160,122,0.12), transparent 70%),
+    var(--cream);
+  padding: clamp(5rem, 12vh, 7rem) var(--side-pad) 3rem;
+}
+.hero-content{ max-width: 560px; margin: 0 auto; }
+
+.hero-illustration{
+  width: clamp(190px, 34vw, 280px);
+  margin: 0 auto clamp(1.25rem, 3vw, 2rem);
+}
+
+.eyebrow{
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: clamp(0.68rem, 0.6rem + 0.3vw, 0.8rem);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mocha);
+  opacity: 0;
+  animation: riseIn 0.9s ease forwards;
+  animation-delay: 0.15s;
+}
+
+.hero-title{
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(2.15rem, 1.5rem + 4vw, 3.75rem);
+  line-height: 1.15;
+  color: var(--espresso);
+  margin: 0.6em 0 0.55em;
+  opacity: 0;
+  animation: riseIn 0.9s ease forwards;
+  animation-delay: 0.32s;
+}
+
+.hero-subtitle{
+  font-size: clamp(1rem, 0.94rem + 0.35vw, 1.2rem);
+  color: #5A4028;
+  max-width: 46ch;
+  margin: 0 auto;
+  opacity: 0;
+  animation: riseIn 0.9s ease forwards;
+  animation-delay: 0.5s;
+}
+
+@keyframes riseIn{
+  from{ opacity: 0; transform: translateY(16px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+
+.scroll-cue{
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mocha);
+  opacity: 0;
+  animation: riseIn 0.9s ease forwards, bob 2.6s ease-in-out infinite;
+  animation-delay: 0.75s, 1.6s;
+}
+.scroll-cue svg{ width: 16px; height: 16px; }
+@keyframes bob{
+  0%, 100%{ transform: translateY(0); }
+  50%{ transform: translateY(6px); }
+}
+
+/* ==========================================================================
+   6. BOTANICAL DIVIDER
+   ========================================================================== */
+.divider{
+  width: clamp(120px, 26vw, 190px);
+  margin: 0 auto clamp(1.5rem, 4vw, 2.25rem);
+  color: var(--mocha);
+  opacity: 0.75;
+}
+.divider.flip{ transform: scaleY(-1); margin: clamp(1.75rem, 4vw, 2.5rem) auto 0; }
+
+/* ==========================================================================
+   7. ARABIC PHRASE SECTION
+   ========================================================================== */
+.arabic-section{
+  background: linear-gradient(180deg, transparent, var(--cream-soft) 18%, var(--cream-soft) 82%, transparent);
+  text-align: center;
+}
+.arabic-phrase{
+  font-family: var(--font-arabic);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 1.7rem + 5vw, 4.75rem);
+  line-height: 1.65;
+  color: var(--espresso);
+  letter-spacing: normal; /* never letter-space Arabic — it breaks the joins */
+  direction: rtl;
+}
+.arabic-translation{
+  margin-top: clamp(0.85rem, 2vw, 1.25rem);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.98rem, 0.4vw + 0.92rem, 1.2rem);
+  /* --mocha here sat right at a 4.5:1 contrast ratio against the section's
+     --cream-soft background — too close to the AA line, so this text uses
+     the darker --mocha-deep instead. */
+  color: var(--mocha-deep);
+}
+
+/* ==========================================================================
+   8. QUOTE / LOVE NOTE SECTION
+   ========================================================================== */
+.quote-section{ text-align: center; }
+.quote-label{
+  font-size: clamp(0.68rem, 0.6rem + 0.3vw, 0.8rem);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mocha);
+  margin-bottom: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.note-card{
+  position: relative;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: clamp(2.25rem, 6vw, 3.5rem) clamp(1.75rem, 6vw, 3rem);
+  background: linear-gradient(160deg, var(--cream-soft), var(--cream) 70%);
+  border: 1px solid rgba(138, 93, 59, 0.16);
+  border-radius: 26px 8px 26px 8px;
+  box-shadow: 0 28px 50px -30px rgba(59, 36, 23, 0.38), 0 2px 0 rgba(255,255,255,0.5) inset;
+  transform: rotate(-1.1deg);
+  overflow: hidden;
+}
+
+.stain{
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid var(--mocha);
+  opacity: 0.09;
+  pointer-events: none;
+}
+.stain--one{ width: 96px; height: 84px; top: -20px; right: -18px; transform: rotate(12deg); }
+.stain--two{ width: 60px; height: 54px; bottom: 14px; left: -14px; transform: rotate(-8deg); }
+
+.quote-mark{
+  width: 34px;
+  margin: 0 auto 0.85rem;
+  color: var(--mocha);
+  opacity: 0.7;
+}
+
+.quote-text{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.2rem, 1rem + 0.9vw, 1.6rem);
+  line-height: 1.65;
+  color: var(--espresso);
+}
+
+.quote-signature{
+  margin-top: clamp(1.1rem, 3vw, 1.6rem);
+  font-family: var(--font-script);
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.1rem);
+  color: var(--mocha);
+}
+
+/* ==========================================================================
+   9. FOOTER
+   ========================================================================== */
+.site-footer{
+  text-align: center;
+  padding-bottom: clamp(4rem, 10vw, 6rem);
+}
+.footer-illustration{
+  width: clamp(230px, 48vw, 360px);
+  margin: 0 auto clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.footer-note{
+  font-size: 1rem; /* keep body copy at the 16px mobile-readability floor */
+  color: #6B4C31;
+  max-width: 40ch;
+  margin: 0 auto;
+}
+.footer-signature{
+  margin-top: 0.6rem;
+  font-family: var(--font-script);
+  font-size: clamp(1.4rem, 1.1rem + 1vw, 1.8rem);
+  color: var(--espresso);
+}
+
+/* ==========================================================================
+   10. HERO ILLUSTRATION ANIMATION (coffee steam drifting into lily petals)
+   ========================================================================== */
+.steam-wisp{
+  transform-origin: bottom center;
+  animation: steamRise 6s ease-in-out infinite;
+}
+.hero-illustration .w1{ animation-delay: 0s; }
+.hero-illustration .w2{ animation-delay: -2s; }
+.hero-illustration .w3{ animation-delay: -4s; }
+
+@keyframes steamRise{
+  0%   { opacity: 0;    transform: translateY(0) scaleY(0.85); }
+  16%  { opacity: 0.55; }
+  55%  { opacity: 0.32; transform: translateY(-10px) scaleY(1); }
+  78%  { opacity: 0;    transform: translateY(-18px) scaleY(1.05); }
+  100% { opacity: 0;    transform: translateY(-18px) scaleY(1.05); }
+}
+
+.steam-petal{
+  transform-origin: center;
+  animation: petalFromSteam 6s ease-in-out infinite;
+}
+.hero-illustration .p1{ animation-delay: 0.2s; }
+.hero-illustration .p2{ animation-delay: -1.8s; }
+.hero-illustration .p3{ animation-delay: -3.8s; }
+
+@keyframes petalFromSteam{
+  0%, 48%  { opacity: 0; transform: translate(0,0) rotate(0deg) scale(0.35); }
+  60%      { opacity: 0.85; transform: translate(4px,-8px) rotate(15deg) scale(0.65); }
+  85%      { opacity: 0.55; transform: translate(16px,-28px) rotate(55deg) scale(0.85); }
+  100%     { opacity: 0; transform: translate(24px,-40px) rotate(85deg) scale(0.95); }
+}
+
+.sway{
+  animation: sway 7s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+@keyframes sway{
+  0%, 100%{ transform: rotate(-1.5deg); }
+  50%{ transform: rotate(1.5deg); }
+}
+
+/* ==========================================================================
+   11. RESPONSIVE REFINEMENTS
+   ========================================================================== */
+@media (min-width: 640px){
+  .note-card{ transform: rotate(-1.6deg); }
+}
+@media (min-width: 900px){
+  :root{ --side-pad: 2rem; }
+  section{ padding: calc(var(--section-pad) * 1.1) 0; }
+}
+
+/* ==========================================================================
+   12. MOTION ACCESSIBILITY
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.2s !important;
+    scroll-behavior: auto !important;
+  }
+  .hero-title, .hero-subtitle, .eyebrow, .scroll-cue{ opacity: 1; }
+  .petal{ display: none; }
+}
+
+/* Pause the ambient loops (steam, sway, drifting petals, scroll cue) when
+   the tab isn't visible — courtesy for battery/CPU if she leaves it open
+   in a background tab. Toggled by the visibilitychange listener below. */
+body.is-hidden .steam-wisp,
+body.is-hidden .steam-petal,
+body.is-hidden .sway,
+body.is-hidden .scroll-cue,
+body.is-hidden .petal{
+  animation-play-state: paused;
+}
+
+</style>
+</head>
+<body>
+
+<!-- Ambient paper texture + drifting petals sit behind all content -->
+<div class="texture" aria-hidden="true"></div>
+<div class="petal-field" id="petalField" aria-hidden="true"></div>
+
+<!-- ==========================================================================
+     REUSABLE SVG ARTWORK (defined once, reused via <use>)
+     ========================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+
+    <!-- A single lily petal, used for the drifting background petals -->
+    <symbol id="petal-shape" viewBox="0 0 20 34">
+      <path d="M10,0 C18,7 18,25 10,34 C2,25 2,7 10,0 Z" fill="currentColor"/>
+    </symbol>
+
+    <!-- Full lily bloom head (six tepals, stamens, pistil). Center is at 0,0.
+         Note: this is a <g>, not a <symbol> — a <use> referencing a <symbol>
+         stretches to fill 100% of whatever viewport it sits in unless every
+         instance sets matching width/height, which broke sizing whenever the
+         parent SVG's viewBox didn't happen to match this shape's bounds. A
+         plain <g> just places its own coordinates directly, so translate/scale
+         on each <use> behaves exactly as written, everywhere it's used. -->
+    <g id="lily-bloom">
+      <!-- back whorl -->
+      <g fill="var(--cream-soft)">
+        <g transform="rotate(28)"><path d="M0,0 C-15,-18 -13,-58 0,-95 C13,-58 15,-18 0,0 Z"/></g>
+        <g transform="rotate(150)"><path d="M0,0 C-15,-18 -13,-58 0,-95 C13,-58 15,-18 0,0 Z"/></g>
+        <g transform="rotate(268)"><path d="M0,0 C-15,-18 -13,-58 0,-95 C13,-58 15,-18 0,0 Z"/></g>
+      </g>
+      <!-- front whorl -->
+      <g fill="var(--petal)" stroke="var(--mocha)" stroke-opacity="0.18" stroke-width="1">
+        <g transform="rotate(-4)"><path d="M0,0 C-15,-18 -13,-58 0,-95 C13,-58 15,-18 0,0 Z"/></g>
+        <g transform="rotate(118)"><path d="M0,0 C-15,-18 -13,-58 0,-95 C13,-58 15,-18 0,0 Z"/></g>
+        <g transform="rotate(241)"><path d="M0,0 C-15,-18 -13,-58 0,-95 C13,-58 15,-18 0,0 Z"/></g>
+      </g>
+      <!-- stamens -->
+      <g stroke="var(--mocha)" stroke-width="1.5" stroke-linecap="round">
+        <g transform="rotate(-55)"><line x1="0" y1="0" x2="0" y2="-40"/><ellipse cx="0" cy="-42" rx="3.5" ry="5.5" fill="var(--gold)" stroke="none"/></g>
+        <g transform="rotate(-32)"><line x1="0" y1="0" x2="0" y2="-46"/><ellipse cx="0" cy="-48" rx="3.5" ry="5.5" fill="var(--gold)" stroke="none"/></g>
+        <g transform="rotate(-10)"><line x1="0" y1="0" x2="0" y2="-42"/><ellipse cx="0" cy="-44" rx="3.5" ry="5.5" fill="var(--gold)" stroke="none"/></g>
+        <g transform="rotate(12)"><line x1="0" y1="0" x2="0" y2="-46"/><ellipse cx="0" cy="-48" rx="3.5" ry="5.5" fill="var(--gold)" stroke="none"/></g>
+        <g transform="rotate(34)"><line x1="0" y1="0" x2="0" y2="-40"/><ellipse cx="0" cy="-42" rx="3.5" ry="5.5" fill="var(--gold)" stroke="none"/></g>
+        <g transform="rotate(56)"><line x1="0" y1="0" x2="0" y2="-44"/><ellipse cx="0" cy="-46" rx="3.5" ry="5.5" fill="var(--gold)" stroke="none"/></g>
+      </g>
+      <circle cx="0" cy="0" r="3.5" fill="var(--mocha)"/>
+    </g>
+
+    <!-- Tulip bloom head — a cupped trio of tepals, viewed three-quarter on.
+         Also a <g> (see note on #lily-bloom above) so translate/rotate/scale
+         on each <use> works the same in every composition it appears in. -->
+    <g id="tulip-bloom">
+      <!-- two outer tepals, splayed open -->
+      <g fill="var(--latte)" stroke="var(--mocha)" stroke-opacity="0.2" stroke-width="1">
+        <g transform="rotate(-24)"><path d="M-15,2 C-21,-22 -16,-46 0,-52 C16,-46 21,-22 15,2 C9,-4 -9,-4 -15,2 Z"/></g>
+        <g transform="rotate(24)"><path d="M-15,2 C-21,-22 -16,-46 0,-52 C16,-46 21,-22 15,2 C9,-4 -9,-4 -15,2 Z"/></g>
+      </g>
+      <!-- front tepal, larger, sits on top -->
+      <g fill="var(--cream-soft)" stroke="var(--mocha)" stroke-opacity="0.25" stroke-width="1">
+        <path d="M-17,3 C-24,-25 -18,-52 0,-58 C18,-52 24,-25 17,3 C10,-4 -10,-4 -17,3 Z"/>
+      </g>
+      <!-- calyx -->
+      <path d="M-6,3 C-6,9 6,9 6,3 C3,6 -3,6 -6,3 Z" fill="var(--sage)"/>
+    </g>
+
+  </defs>
+</svg>
+
+<!-- ==========================================================================
+     HERO — heartfelt welcome
+     ========================================================================== -->
+<header class="hero">
+  <div class="hero-content">
+
+    <!-- Coffee cup with rising steam that drifts into lily petals, beside a full lily bouquet -->
+    <svg class="hero-illustration" viewBox="0 0 340 250" aria-hidden="true">
+      <ellipse cx="168" cy="234" rx="130" ry="9" fill="var(--mocha)" opacity="0.12"/>
+
+      <!-- a small hand-tied lily bouquet, resting beside the cup -->
+      <g class="sway">
+        <!-- stems, gathered to one point -->
+        <path d="M270,230 C254,196 236,150 232,118" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M270,230 C270,180 266,120 266,80" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M270,230 C286,198 300,152 300,124" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+        <!-- leaves -->
+        <path d="M250,178 C232,172 220,182 214,196 C232,200 246,192 250,178 Z" fill="var(--sage)"/>
+        <path d="M286,168 C304,162 316,172 322,186 C304,190 290,182 286,168 Z" fill="var(--sage)"/>
+
+        <!-- three blooms, back ones first so the center bloom sits on top -->
+        <use href="#lily-bloom" transform="translate(232,112) rotate(-12) scale(0.48)"/>
+        <use href="#lily-bloom" transform="translate(300,118) rotate(14) scale(0.44)"/>
+        <use href="#lily-bloom" transform="translate(266,74) scale(0.58)"/>
+
+        <!-- ribbon, tied where the stems gather -->
+        <path d="M266,232 C260,244 264,256 258,266" stroke="var(--gold)" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M274,232 C280,244 276,256 282,266" stroke="var(--gold)" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M270,230 C258,222 250,226 252,236 C260,236 268,234 270,230 Z" fill="var(--gold)"/>
+        <path d="M270,230 C282,222 290,226 288,236 C280,236 272,234 270,230 Z" fill="var(--gold)"/>
+        <circle cx="270" cy="230" r="4.5" fill="var(--mocha)"/>
+      </g>
+
+      <!-- coffee cup -->
+      <ellipse cx="94" cy="207" rx="58" ry="10" fill="var(--latte)" stroke="var(--mocha)" stroke-width="2"/>
+      <path d="M52,138 L136,138 L127,203 Q94,213 61,203 Z" fill="var(--mocha)"/>
+      <path d="M132,148 C156,148 156,182 132,187" stroke="var(--mocha)" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <ellipse cx="94" cy="138" rx="42" ry="9.5" fill="var(--cream-soft)" stroke="var(--mocha)" stroke-width="2"/>
+      <ellipse cx="94" cy="138" rx="35" ry="6.5" fill="var(--espresso)"/>
+      <path d="M78,136 Q94,131 110,136" stroke="var(--cream)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55"/>
+
+      <!-- steam that becomes petals -->
+      <g>
+        <path class="steam-wisp w1" d="M80,132 C70,114 88,100 78,82 C70,66 86,54 80,38" stroke="var(--petal)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path class="steam-wisp w2" d="M95,134 C85,116 103,102 93,84 C85,68 101,56 95,40" stroke="var(--petal)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path class="steam-wisp w3" d="M110,132 C120,114 102,100 112,82 C120,66 104,54 110,38" stroke="var(--petal)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+
+        <g class="steam-petal p1" transform="translate(80,38)"><use href="#petal-shape" width="14" height="24" x="-7" y="-12" color="var(--petal)"/></g>
+        <g class="steam-petal p2" transform="translate(95,40)"><use href="#petal-shape" width="12" height="20" x="-6" y="-10" color="var(--cream-soft)"/></g>
+        <g class="steam-petal p3" transform="translate(110,38)"><use href="#petal-shape" width="13" height="22" x="-6.5" y="-11" color="var(--petal)"/></g>
+      </g>
+    </svg>
+
+    <span class="eyebrow" id="heroEyebrow"></span>
+    <h1 class="hero-title" id="heroTitle"></h1>
+    <p class="hero-subtitle" id="heroSubtitle"></p>
+
+    <span class="scroll-cue" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ==========================================================================
+       ARABIC PHRASE — the heart of the page
+       ========================================================================== -->
+  <section class="arabic-section reveal" data-reveal>
+    <div class="inner">
+      <svg class="divider" viewBox="0 0 190 40" aria-hidden="true">
+        <line x1="0" y1="20" x2="76" y2="20" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="114" y1="20" x2="190" y2="20" stroke="currentColor" stroke-width="1.5"/>
+        <use href="#lily-bloom" transform="translate(95,26) scale(0.22)"/>
+      </svg>
+
+      <p class="arabic-phrase" id="arabicPhrase" lang="ar" dir="rtl"></p>
+      <p class="arabic-translation" id="arabicTranslation" lang="en" dir="ltr"></p>
+
+      <svg class="divider flip" viewBox="0 0 190 40" aria-hidden="true">
+        <line x1="0" y1="20" x2="76" y2="20" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="114" y1="20" x2="190" y2="20" stroke="currentColor" stroke-width="1.5"/>
+        <use href="#lily-bloom" transform="translate(95,26) scale(0.22)"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       LOVE QUOTE — a little note left on the table
+       ========================================================================== -->
+  <section class="quote-section reveal" data-reveal>
+    <div class="inner">
+      <p class="quote-label" id="quoteLabel"></p>
+
+      <div class="note-card">
+        <div class="stain stain--one" aria-hidden="true"></div>
+        <div class="stain stain--two" aria-hidden="true"></div>
+
+        <svg class="quote-mark" viewBox="-105 -105 210 205" aria-hidden="true">
+          <use href="#lily-bloom"/>
+        </svg>
+
+        <p class="quote-text" id="quoteText"></p>
+        <p class="quote-signature" id="quoteSignature"></p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ==========================================================================
+     FOOTER
+     ========================================================================== -->
+<footer class="site-footer reveal" data-reveal>
+  <div class="inner">
+    <!-- a full tulip bouquet, tied with the same ribbon as the one up top -->
+    <svg class="footer-illustration" viewBox="0 0 360 200" aria-hidden="true">
+      <ellipse cx="180" cy="192" rx="118" ry="8" fill="var(--mocha)" opacity="0.1"/>
+
+      <g class="sway">
+        <!-- center leaf, behind the stems -->
+        <path d="M180,122 C168,110 168,90 180,78 C192,90 192,110 180,122 Z" fill="var(--sage)"/>
+
+        <!-- five stems, gathered to one point -->
+        <path d="M180,186 C148,168 118,132 96,116" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M180,186 C160,162 142,110 134,86" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M180,186 C180,146 180,88 180,66" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M180,186 C200,162 218,110 226,86" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M180,186 C212,168 242,132 264,116" stroke="var(--sage)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+
+        <!-- broad tulip leaves -->
+        <path d="M150,152 C124,144 104,158 92,178 C118,182 140,168 150,152 Z" fill="var(--sage)"/>
+        <path d="M210,152 C236,144 256,158 268,178 C242,182 220,168 210,152 Z" fill="var(--sage)"/>
+
+        <!-- five blooms, outer pairs first so the center bloom sits on top -->
+        <use href="#tulip-bloom" transform="translate(96,110) rotate(-20) scale(0.4)"/>
+        <use href="#tulip-bloom" transform="translate(264,110) rotate(20) scale(0.4)"/>
+        <use href="#tulip-bloom" transform="translate(134,80) rotate(-9) scale(0.48)"/>
+        <use href="#tulip-bloom" transform="translate(226,80) rotate(9) scale(0.48)"/>
+        <use href="#tulip-bloom" transform="translate(180,60) scale(0.56)"/>
+
+        <!-- ribbon -->
+        <path d="M175,188 C168,202 173,216 166,228" stroke="var(--gold)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M185,188 C192,202 187,216 194,228" stroke="var(--gold)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+        <path d="M180,186 C166,177 157,181 159,192 C168,192 177,190 180,186 Z" fill="var(--gold)"/>
+        <path d="M180,186 C194,177 203,181 201,192 C192,192 183,190 180,186 Z" fill="var(--gold)"/>
+        <circle cx="180" cy="186" r="5" fill="var(--mocha)"/>
+      </g>
+    </svg>
+    <p class="footer-note" id="footerNote"></p>
+    <p class="footer-signature" id="footerSignature"></p>
+  </div>
+</footer>
+
+<script>
+/* ==========================================================================
+   EDIT ME — everything you'll want to change lives in this one object.
+   Update a line, save the file, redeploy — she'll see the new version
+   the next time she opens or refreshes the page. No build step needed.
+   ========================================================================== */
+const CONFIG = {
+
+  // Small uppercase label above the hero title
+  heroEyebrow: "a little note, brewed with love",
+
+  // The big welcome headline
+  heroTitle: "Good Night, Princesse Kaaki",
+
+  // Warm welcome paragraph under the headline
+  heroSubtitle: "This is a small reminder mn l sa2il Wael ino you deserve kel shi hlooo bhal deniii w inik hada bjninnn",
+
+  // The Arabic phrase, shown large and centered
+  arabicPhrase: "يقيناً كله خير",
+
+  // A gentle English gloss shown beneath it
+  arabicTranslation: "Surely, it is all for the good.",
+
+  // Small label above the note card
+  quoteLabel: "a little something for you",
+
+  // ---- THE QUOTE ----
+  // This is the one you'll come back to edit most often.
+  // Change the text below any time you like — she'll see the new
+  // version the next time she loads the page.
+  loveQuote: "Ymkin mesh 3atoool a3rif sho 2ool la radiki aw motivate tou bas 3atool ha aa3mil kel shi b2dar 3lay hata ma tnemi za3lini aw m3asbi mei w ino I make sure Little Leila is happy",
+
+  // Who the note is signed by
+  quoteSignature: "— Wael",
+
+  // Footer closing line
+  footerNote: "Made with love, one cup and one petal at a time.",
+
+  // Footer signature
+  footerSignature: "De tout mon cœur à Leila, ton petit nez est la preuve que les choses les plus simples peuvent être les plus belles — il te rend encore plus irrésistible.",
+};
+
+/* ==========================================================================
+   Populate the page from CONFIG above. You shouldn't need to touch
+   anything below this line.
+   ========================================================================== */
+(function populateContent(){
+  const set = (id, text) => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = text;
+  };
+  set('heroEyebrow', CONFIG.heroEyebrow);
+  set('heroTitle', CONFIG.heroTitle);
+  set('heroSubtitle', CONFIG.heroSubtitle);
+  set('arabicPhrase', CONFIG.arabicPhrase);
+  set('arabicTranslation', CONFIG.arabicTranslation);
+  set('quoteLabel', CONFIG.quoteLabel);
+  set('quoteText', CONFIG.loveQuote);
+  set('quoteSignature', CONFIG.quoteSignature);
+  set('footerNote', CONFIG.footerNote);
+  set('footerSignature', CONFIG.footerSignature);
+})();
+
+/* ==========================================================================
+   Ambient floating lily petals — purely decorative, generated once.
+   ========================================================================== */
+(function spawnPetals(){
+  const field = document.getElementById('petalField');
+  if(!field) return;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion) return; // CSS also disables motion; skip generating extra nodes
+
+  const colors = ['var(--petal)', 'var(--cream-soft)', 'var(--latte)'];
+  const count = window.innerWidth < 640 ? 9 : 14;
+
+  for(let i = 0; i < count; i++){
+    const petal = document.createElement('div');
+    petal.className = 'petal';
+
+    const size = 12 + Math.random() * 16;           // 12–28px
+    const duration = 16 + Math.random() * 12;        // 16–28s
+    const delay = -Math.random() * duration;          // start mid-flight
+    const drift = (Math.random() * 100 - 50).toFixed(0); // -50 to 50px sway
+    const opacity = (0.45 + Math.random() * 0.3).toFixed(2);
+
+    petal.style.setProperty('--x', Math.random() * 100 + '%');
+    petal.style.setProperty('--size', size + 'px');
+    petal.style.setProperty('--duration', duration + 's');
+    petal.style.setProperty('--delay', delay + 's');
+    petal.style.setProperty('--drift-x', drift + 'px');
+    petal.style.setProperty('--op', opacity);
+    petal.style.setProperty('--petal-color', colors[i % colors.length]);
+
+    petal.innerHTML = '<svg viewBox="0 0 20 34"><use href="#petal-shape"/></svg>';
+    field.appendChild(petal);
+  }
+})();
+
+/* ==========================================================================
+   Gentle scroll-reveal for each section.
+   ========================================================================== */
+(function scrollReveal(){
+  const items = document.querySelectorAll('[data-reveal]');
+  if(!('IntersectionObserver' in window) || items.length === 0){
+    items.forEach(el => el.classList.add('is-visible'));
+    return;
+  }
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+  items.forEach(el => observer.observe(el));
+})();
+
+/* ==========================================================================
+   Pause ambient animations while the tab is in the background.
+   ========================================================================== */
+(function pauseWhenHidden(){
+  const sync = () => document.body.classList.toggle('is-hidden', document.hidden);
+  document.addEventListener('visibilitychange', sync);
+  sync();
+})();
+</script>
+</body>
+</html>
