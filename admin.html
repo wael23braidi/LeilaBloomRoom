@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F8F0E1">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Edit — A Little Note, Brewed With Love</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%233B2417'/%3E%3Cpath d='M50 30C40 42 40 62 50 78C60 62 60 42 50 30Z' fill='%23FBF5EA'/%3E%3Cpath d='M50 30C38 36 30 52 30 68C42 66 50 50 50 30Z' fill='%23F3E6CF'/%3E%3Cpath d='M50 30C62 36 70 52 70 68C58 66 50 50 50 30Z' fill='%23F3E6CF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,400&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   This is a utility page for whoever owns this site (not for her) — it
+   edits content.json in the GitHub repo directly via the GitHub API.
+   Reuses the same palette as index.html for visual consistency.
+   ========================================================================== */
+:root{
+  --cream:      #F8F0E1;
+  --cream-soft: #F1E4CC;
+  --latte:      #E3C9A0;
+  --mocha:      #8A5D3B;
+  --espresso:   #3B2417;
+  --petal:      #FFFDF7;
+  --error:      #A23B2E;
+  --success:    #4B6B3E;
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-body:    'Cairo', 'Segoe UI', sans-serif;
+}
+*, *::before, *::after{ box-sizing: border-box; }
+body{
+  margin: 0;
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  color-scheme: light;
+  padding: clamp(1.25rem, 5vw, 3rem) 1rem 4rem;
+}
+.wrap{ max-width: 640px; margin: 0 auto; }
+
+h1{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.6rem, 1.3rem + 1.5vw, 2.1rem);
+  margin: 0 0 0.35rem;
+}
+.subtitle{
+  color: #5A4028;
+  font-size: 0.95rem;
+  margin: 0 0 2rem;
+  max-width: 55ch;
+}
+
+.card{
+  background: var(--cream-soft);
+  border: 1px solid rgba(138,93,59,0.18);
+  border-radius: 16px;
+  padding: clamp(1.25rem, 4vw, 1.75rem);
+  margin-bottom: 1.5rem;
+}
+.card h2{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+.card p.hint{
+  font-size: 0.85rem;
+  color: #6B4C31;
+  margin: 0.35rem 0 0.9rem;
+}
+
+label{
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mocha);
+  margin: 1rem 0 0.35rem;
+}
+label:first-of-type{ margin-top: 0; }
+
+input[type="text"], input[type="password"], textarea{
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--latte);
+  border-radius: 10px;
+  background: var(--petal);
+  color: var(--espresso);
+  resize: vertical;
+}
+input:focus-visible, textarea:focus-visible{
+  outline: 2px solid var(--mocha);
+  outline-offset: 1px;
+}
+textarea{ min-height: 4.5rem; font-family: inherit; }
+[dir="rtl"]{ text-align: right; }
+
+.row{ display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.checkbox-row{
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #5A4028;
+}
+.checkbox-row input{ width: auto; }
+
+button{
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.65rem 1.2rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--mocha);
+  color: var(--petal);
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+button:hover{ background: var(--espresso); }
+button:focus-visible{ outline: 2px solid var(--mocha); outline-offset: 2px; }
+button.secondary{
+  background: transparent;
+  color: var(--mocha);
+  border: 1px solid var(--latte);
+}
+button.secondary:hover{ background: rgba(138,93,59,0.08); }
+button:disabled{ opacity: 0.5; cursor: not-allowed; }
+
+.status{
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  display: none;
+}
+.status.is-visible{ display: block; }
+.status.is-info{ background: rgba(138,93,59,0.1); color: var(--espresso); }
+.status.is-success{ background: rgba(75,107,62,0.12); color: var(--success); }
+.status.is-error{ background: rgba(162,59,46,0.1); color: var(--error); }
+.status a{ color: inherit; }
+
+#formSection{ display: none; }
+#formSection.is-visible{ display: block; }
+
+.field-group{ margin-bottom: 0.25rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Edit your site's text</h1>
+  <p class="subtitle">Changes here save straight to GitHub. The live page rebuilds automatically after — usually within a few minutes.</p>
+
+  <!-- ==========================================================================
+       STEP 1 — connect with a GitHub token (kept only in this browser)
+       ========================================================================== -->
+  <div class="card">
+    <h2>Connect to GitHub</h2>
+    <p class="hint">Paste your personal access token below. It's stored only in this browser (localStorage) and sent only to GitHub's API — never anywhere else.</p>
+    <label for="tokenInput">Personal access token</label>
+    <input type="password" id="tokenInput" autocomplete="off" spellcheck="false" placeholder="github_pat_...">
+    <div class="checkbox-row">
+      <input type="checkbox" id="rememberToken" checked>
+      <label for="rememberToken" style="margin:0; font-size:inherit; font-weight:400; color:inherit;">Remember on this device</label>
+    </div>
+    <div class="row" style="margin-top:1rem;">
+      <button id="loadButton" type="button">Load current content</button>
+      <button id="forgetButton" type="button" class="secondary">Forget token</button>
+    </div>
+    <div class="status" id="connectStatus"></div>
+  </div>
+
+  <!-- ==========================================================================
+       STEP 2 — the form (hidden until content loads successfully)
+       ========================================================================== -->
+  <div id="formSection">
+    <div class="card">
+      <h2>Privacy gate</h2>
+      <div class="field-group">
+        <label for="f_sitePassword">Password (share this with her separately from the link)</label>
+        <input type="text" id="f_sitePassword">
+        <label for="f_gateTitle">Gate title</label>
+        <input type="text" id="f_gateTitle">
+        <label for="f_gateMessage">Gate message</label>
+        <input type="text" id="f_gateMessage">
+        <label for="f_gateButtonText">Gate button text</label>
+        <input type="text" id="f_gateButtonText">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Hero section</h2>
+      <div class="field-group">
+        <label for="f_heroEyebrow">Small label above the title</label>
+        <input type="text" id="f_heroEyebrow">
+        <label for="f_heroTitle">Big headline</label>
+        <input type="text" id="f_heroTitle">
+        <label for="f_heroSubtitle">Welcome paragraph</label>
+        <textarea id="f_heroSubtitle"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Arabic phrase</h2>
+      <div class="field-group">
+        <label for="f_arabicPhrase">Arabic text</label>
+        <textarea id="f_arabicPhrase" dir="rtl" lang="ar"></textarea>
+        <label for="f_arabicTranslation">English gloss beneath it</label>
+        <input type="text" id="f_arabicTranslation">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Love quote</h2>
+      <div class="field-group">
+        <label for="f_quoteLabel">Small label above the note card</label>
+        <input type="text" id="f_quoteLabel">
+        <label for="f_loveQuote">The quote</label>
+        <textarea id="f_loveQuote" style="min-height:6rem;"></textarea>
+        <label for="f_quoteSignature">Signed by</label>
+        <input type="text" id="f_quoteSignature">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Footer</h2>
+      <div class="field-group">
+        <label for="f_footerNote">Closing line</label>
+        <input type="text" id="f_footerNote">
+        <label for="f_footerSignature">Footer signature</label>
+        <textarea id="f_footerSignature"></textarea>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="saveButton" type="button">Save changes</button>
+      <button id="reloadButton" type="button" class="secondary">Reload from GitHub</button>
+    </div>
+    <div class="status" id="saveStatus"></div>
+  </div>
+
+</div>
+
+<script>
+/* ==========================================================================
+   This repo/path is fixed on purpose — this admin page only ever manages
+   this one site's content.json.
+   ========================================================================== */
+const OWNER = 'wael23braidi';
+const REPO = 'LeilaBloomRoom';
+const PATH = 'content.json';
+const BRANCH = 'main';
+const TOKEN_STORAGE_KEY = 'flowerAdminToken';
+
+const FIELDS = [
+  'sitePassword', 'gateTitle', 'gateMessage', 'gateButtonText',
+  'heroEyebrow', 'heroTitle', 'heroSubtitle',
+  'arabicPhrase', 'arabicTranslation',
+  'quoteLabel', 'loveQuote', 'quoteSignature',
+  'footerNote', 'footerSignature'
+];
+
+let currentSha = null;
+
+const tokenInput = document.getElementById('tokenInput');
+const rememberToken = document.getElementById('rememberToken');
+const loadButton = document.getElementById('loadButton');
+const forgetButton = document.getElementById('forgetButton');
+const connectStatus = document.getElementById('connectStatus');
+const formSection = document.getElementById('formSection');
+const saveButton = document.getElementById('saveButton');
+const reloadButton = document.getElementById('reloadButton');
+const saveStatus = document.getElementById('saveStatus');
+
+function showStatus(el, message, kind){
+  el.textContent = message;
+  el.className = 'status is-visible is-' + kind;
+}
+function hideStatus(el){
+  el.className = 'status';
+}
+
+// UTF-8 safe base64 helpers — GitHub's API needs Unicode text (Arabic,
+// French accents, em dashes) round-tripped correctly, not mangled by a
+// plain atob/btoa call.
+function utf8ToBase64(str){
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+function base64ToUtf8(b64){
+  const binary = atob(b64.replace(/\n/g, ''));
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function githubGetFile(token){
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}?ref=${BRANCH}`, {
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github+json'
+    }
+  });
+  if(!res.ok){
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`${res.status} ${res.statusText}${body.message ? ' — ' + body.message : ''}`);
+  }
+  const data = await res.json();
+  return { json: JSON.parse(base64ToUtf8(data.content)), sha: data.sha };
+}
+
+async function githubPutFile(token, contentObj, sha){
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: 'Update site content via admin page',
+      content: utf8ToBase64(JSON.stringify(contentObj, null, 2)),
+      sha: sha,
+      branch: BRANCH
+    })
+  });
+  if(!res.ok){
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`${res.status} ${res.statusText}${body.message ? ' — ' + body.message : ''}`);
+  }
+  return res.json();
+}
+
+function fillForm(json){
+  FIELDS.forEach(key => {
+    const el = document.getElementById('f_' + key);
+    if(el) el.value = json[key] || '';
+  });
+}
+
+function readForm(){
+  const out = {};
+  FIELDS.forEach(key => {
+    const el = document.getElementById('f_' + key);
+    out[key] = el ? el.value : '';
+  });
+  return out;
+}
+
+async function loadContent(){
+  const token = tokenInput.value.trim();
+  if(!token){
+    showStatus(connectStatus, 'Paste your token first.', 'error');
+    return;
+  }
+  if(rememberToken.checked){
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+  loadButton.disabled = true;
+  showStatus(connectStatus, 'Loading current content…', 'info');
+  try {
+    const { json, sha } = await githubGetFile(token);
+    currentSha = sha;
+    fillForm(json);
+    formSection.classList.add('is-visible');
+    saveButton.disabled = false;
+    showStatus(connectStatus, 'Loaded. Edit below and click "Save changes".', 'success');
+  } catch (err) {
+    showStatus(connectStatus, "Couldn't load content — " + err.message, 'error');
+  } finally {
+    loadButton.disabled = false;
+  }
+}
+
+async function saveContent(){
+  const token = tokenInput.value.trim();
+  if(!token || currentSha === null){
+    showStatus(saveStatus, 'Load content first.', 'error');
+    return;
+  }
+  saveButton.disabled = true;
+  showStatus(saveStatus, 'Saving…', 'info');
+  try {
+    const updated = readForm();
+    const result = await githubPutFile(token, updated, currentSha);
+    currentSha = result.content.sha; // so a second save in a row still works
+    showStatus(
+      saveStatus,
+      'Saved! The live site rebuilds automatically — usually live within a few minutes. ' +
+      'Check progress at the repo\'s Actions tab if you want to confirm.',
+      'success'
+    );
+  } catch (err) {
+    if(String(err.message).startsWith('409')){
+      showStatus(saveStatus, 'Someone/something changed the file since you loaded it. Click "Reload from GitHub" and reapply your edits.', 'error');
+    } else {
+      showStatus(saveStatus, "Couldn't save — " + err.message, 'error');
+    }
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
+loadButton.addEventListener('click', loadContent);
+reloadButton.addEventListener('click', loadContent);
+saveButton.addEventListener('click', saveContent);
+saveButton.disabled = true;
+
+forgetButton.addEventListener('click', () => {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  tokenInput.value = '';
+  currentSha = null;
+  formSection.classList.remove('is-visible');
+  saveButton.disabled = true;
+  hideStatus(saveStatus);
+  showStatus(connectStatus, 'Token forgotten on this device.', 'info');
+});
+
+// Auto-load if a token is already remembered on this device.
+(function init(){
+  const saved = localStorage.getItem(TOKEN_STORAGE_KEY);
+  if(saved){
+    tokenInput.value = saved;
+    loadContent();
+  }
+})();
+</script>
+</body>
+</html>

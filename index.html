@@ -771,11 +771,14 @@ body.is-hidden .petal{
 
 <script>
 /* ==========================================================================
-   EDIT ME — everything you'll want to change lives in this one object.
-   Update a line, save the file, redeploy — she'll see the new version
-   the next time she opens or refreshes the page. No build step needed.
+   All the editable text now lives in content.json, so it can be updated
+   from admin.html (a form that commits straight to GitHub) without
+   touching this file. DEFAULT_CONTENT below is only a fallback, used if
+   content.json can't be fetched (offline, opened via file://, etc.) —
+   keep it in sync with content.json occasionally, but it's not what she
+   normally sees.
    ========================================================================== */
-const CONFIG = {
+const DEFAULT_CONTENT = {
 
   // ---- PRIVACY GATE ----
   // A simple shared password so the page isn't wide open to anyone who
@@ -824,28 +827,30 @@ const CONFIG = {
 };
 
 /* ==========================================================================
-   Populate the page from CONFIG above. You shouldn't need to touch
-   anything below this line.
+   Populate the page from a content object (fetched from content.json,
+   or DEFAULT_CONTENT above if that fetch fails). You shouldn't need to
+   touch this below this line — edit content.json (or use admin.html)
+   instead.
    ========================================================================== */
-(function populateContent(){
+function populateContent(content){
   const set = (id, text) => {
     const el = document.getElementById(id);
     if(el) el.textContent = text;
   };
-  set('heroEyebrow', CONFIG.heroEyebrow);
-  set('heroTitle', CONFIG.heroTitle);
-  set('heroSubtitle', CONFIG.heroSubtitle);
-  set('arabicPhrase', CONFIG.arabicPhrase);
-  set('arabicTranslation', CONFIG.arabicTranslation);
-  set('quoteLabel', CONFIG.quoteLabel);
-  set('quoteText', CONFIG.loveQuote);
-  set('quoteSignature', CONFIG.quoteSignature);
-  set('footerNote', CONFIG.footerNote);
-  set('footerSignature', CONFIG.footerSignature);
-  set('gateTitle', CONFIG.gateTitle);
-  set('gateMessage', CONFIG.gateMessage);
-  set('gateButton', CONFIG.gateButtonText);
-})();
+  set('heroEyebrow', content.heroEyebrow);
+  set('heroTitle', content.heroTitle);
+  set('heroSubtitle', content.heroSubtitle);
+  set('arabicPhrase', content.arabicPhrase);
+  set('arabicTranslation', content.arabicTranslation);
+  set('quoteLabel', content.quoteLabel);
+  set('quoteText', content.loveQuote);
+  set('quoteSignature', content.quoteSignature);
+  set('footerNote', content.footerNote);
+  set('footerSignature', content.footerSignature);
+  set('gateTitle', content.gateTitle);
+  set('gateMessage', content.gateMessage);
+  set('gateButton', content.gateButtonText);
+}
 
 /* ==========================================================================
    Ambient floating lily petals — purely decorative, generated once.
@@ -919,7 +924,7 @@ const CONFIG = {
    read it regardless. This just keeps the page from being wide open to
    search engines or anyone who stumbles across the link by accident.
    ========================================================================== */
-(function passwordGate(){
+function initPasswordGate(content){
   const STORAGE_KEY = 'flowerGateUnlocked';
   const gate = document.getElementById('gate');
   const form = document.getElementById('gateForm');
@@ -936,7 +941,7 @@ const CONFIG = {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if(normalize(input.value) === normalize(CONFIG.sitePassword)){
+    if(normalize(input.value) === normalize(content.sitePassword)){
       localStorage.setItem(STORAGE_KEY, 'true');
       gate.classList.add('is-unlocked');
     } else {
@@ -948,6 +953,27 @@ const CONFIG = {
       input.select();
     }
   });
+}
+
+/* ==========================================================================
+   Load content.json (falling back to DEFAULT_CONTENT above if it can't be
+   fetched) and only then populate the page and arm the password gate —
+   this is the one part of the file that ties content.json to the rest of
+   the script. cache: 'no-store' so a fresh edit from admin.html is never
+   served from a stale browser cache.
+   ========================================================================== */
+(async function loadContentAndInit(){
+  let content = DEFAULT_CONTENT;
+  try {
+    const res = await fetch('./content.json', { cache: 'no-store' });
+    if(res.ok){
+      content = Object.assign({}, DEFAULT_CONTENT, await res.json());
+    }
+  } catch (e) {
+    // Offline, opened via file://, or content.json missing — DEFAULT_CONTENT covers it.
+  }
+  populateContent(content);
+  initPasswordGate(content);
 })();
 </script>
 </body>
