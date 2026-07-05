@@ -961,17 +961,33 @@ function initPasswordGate(content){
    this is the one part of the file that ties content.json to the rest of
    the script. cache: 'no-store' so a fresh edit from admin.html is never
    served from a stale browser cache.
+
+   Tries the same-origin copy first (fastest, works wherever this file is
+   hosted), then falls back to fetching straight from GitHub's raw file —
+   this means content edits made in admin.html show up immediately even
+   if this page itself is hosted somewhere that isn't rebuilt from the
+   repo (e.g. dropped onto a host by hand), with no redeploy required.
    ========================================================================== */
+const CONTENT_JSON_FALLBACK_URL = 'https://raw.githubusercontent.com/wael23braidi/LeilaBloomRoom/main/content.json';
+
 (async function loadContentAndInit(){
   let content = DEFAULT_CONTENT;
+  let fetched = null;
   try {
     const res = await fetch('./content.json', { cache: 'no-store' });
-    if(res.ok){
-      content = Object.assign({}, DEFAULT_CONTENT, await res.json());
-    }
+    if(res.ok) fetched = await res.json();
   } catch (e) {
-    // Offline, opened via file://, or content.json missing — DEFAULT_CONTENT covers it.
+    // Offline, opened via file://, or content.json missing at this location.
   }
+  if(!fetched){
+    try {
+      const res = await fetch(CONTENT_JSON_FALLBACK_URL, { cache: 'no-store' });
+      if(res.ok) fetched = await res.json();
+    } catch (e) {
+      // Also unreachable — DEFAULT_CONTENT below covers it.
+    }
+  }
+  if(fetched) content = Object.assign({}, DEFAULT_CONTENT, fetched);
   populateContent(content);
   initPasswordGate(content);
 })();
