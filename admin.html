@@ -232,6 +232,25 @@ button:disabled{ opacity: 0.5; cursor: not-allowed; }
     </div>
 
     <div class="card">
+      <h2>Sushi date</h2>
+      <p class="hint">The playful section — she taps a sushi piece and its note pops up.</p>
+      <div class="field-group">
+        <label for="f_sushiLabel">Small label above the title</label>
+        <input type="text" id="f_sushiLabel">
+        <label for="f_sushiTitle">Section title</label>
+        <input type="text" id="f_sushiTitle">
+        <label for="f_sushiMessage">Invitation line</label>
+        <input type="text" id="f_sushiMessage">
+        <label for="f_sushiNote1">Note inside sushi piece 1 (maki)</label>
+        <textarea id="f_sushiNote1"></textarea>
+        <label for="f_sushiNote2">Note inside sushi piece 2 (tamago)</label>
+        <textarea id="f_sushiNote2"></textarea>
+        <label for="f_sushiNote3">Note inside sushi piece 3 (heart maki)</label>
+        <textarea id="f_sushiNote3"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Footer</h2>
       <div class="field-group">
         <label for="f_footerNote">Closing line</label>
@@ -266,6 +285,8 @@ const FIELDS = [
   'heroEyebrow', 'heroTitle', 'heroSubtitle',
   'arabicPhrase', 'arabicTranslation',
   'quoteLabel', 'loveQuote', 'quoteSignature',
+  'sushiLabel', 'sushiTitle', 'sushiMessage',
+  'sushiNote1', 'sushiNote2', 'sushiNote3',
   'footerNote', 'footerSignature'
 ];
 

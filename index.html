@@ -318,6 +318,122 @@ section{ padding: var(--section-pad) 0; }
 }
 
 /* ==========================================================================
+   8b. HERO SURPRISE — the illustration is secretly a button; tapping it
+   puffs hearts out of the coffee steam (JS spawns them into #heartBurst).
+   ========================================================================== */
+.hero-surprise{
+  display: block;
+  margin: 0 auto;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 18px;
+}
+.hero-surprise:focus-visible{
+  outline: 2px solid var(--mocha);
+  outline-offset: 6px;
+}
+.burst-heart{
+  animation: heartFloat 1.6s ease-out forwards;
+  transform-origin: center;
+}
+@keyframes heartFloat{
+  0%   { opacity: 0; transform: translate(0,0) scale(0.4); }
+  15%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(var(--hx, 0px), -70px) scale(1) rotate(var(--hr, 0deg)); }
+}
+
+/* ==========================================================================
+   8c. SUSHI DATE SECTION
+   ========================================================================== */
+.sushi-section{ text-align: center; }
+.sushi-label{
+  font-size: clamp(0.68rem, 0.6rem + 0.3vw, 0.8rem);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mocha);
+  margin-bottom: 0.75rem;
+}
+.sushi-title{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem);
+  color: var(--espresso);
+  margin-bottom: 0.5rem;
+}
+.sushi-message{
+  font-size: clamp(1rem, 0.94rem + 0.35vw, 1.15rem);
+  color: #5A4028;
+  max-width: 44ch;
+  margin: 0 auto clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.sushi-board-wrap{
+  position: relative;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.sushi-board{ width: 100%; }
+.sushi-row{
+  position: absolute;
+  inset: 0 0 auto 0;
+  top: 8%;
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.25rem, 2vw, 0.75rem);
+}
+.sushi-piece{
+  width: clamp(72px, 24vw, 96px);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 14px;
+  transition: transform 0.2s ease;
+}
+.sushi-piece svg{ width: 100%; }
+.sushi-piece:hover{ transform: translateY(-5px); }
+.sushi-piece:focus-visible{
+  outline: 2px solid var(--mocha);
+  outline-offset: 3px;
+}
+.sushi-piece.is-picked{ animation: sushiWiggle 0.5s ease; }
+@keyframes sushiWiggle{
+  0%, 100%{ transform: rotate(0) translateY(0); }
+  25%{ transform: rotate(-7deg) translateY(-7px); }
+  55%{ transform: rotate(6deg) translateY(-9px); }
+  80%{ transform: rotate(-3deg) translateY(-4px); }
+}
+
+.sushi-note{
+  max-width: 440px;
+  margin: clamp(1.25rem, 3vw, 1.75rem) auto 0;
+  padding: 1.1rem 1.5rem;
+  background: var(--cream-soft);
+  border: 1px solid rgba(138,93,59,0.18);
+  border-radius: 4px 18px 18px 18px; /* speech-bubble-ish corner */
+  animation: notePop 0.35s ease;
+}
+@keyframes notePop{
+  from{ opacity: 0; transform: translateY(10px) scale(0.97); }
+  to{ opacity: 1; transform: translateY(0) scale(1); }
+}
+.sushi-note-text{
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--espresso);
+}
+
+/* ==========================================================================
    9. FOOTER
    ========================================================================== */
 .site-footer{
@@ -620,6 +736,10 @@ body.is-hidden .petal{
 <header class="hero">
   <div class="hero-content">
 
+    <!-- The illustration doubles as a hidden surprise: tapping it puffs a
+         few little hearts out of the coffee steam. -->
+    <button class="hero-surprise" id="heroSurprise" type="button" aria-label="A little surprise — tap the coffee cup">
+
     <!-- Coffee cup with rising steam that drifts into lily petals, beside a full lily bouquet -->
     <svg class="hero-illustration" viewBox="0 0 340 250" aria-hidden="true">
       <ellipse cx="168" cy="234" rx="130" ry="9" fill="var(--mocha)" opacity="0.12"/>
@@ -666,7 +786,11 @@ body.is-hidden .petal{
         <g class="steam-petal p2" transform="translate(95,40)"><use href="#petal-shape" width="12" height="20" x="-6" y="-10" color="var(--cream-soft)"/></g>
         <g class="steam-petal p3" transform="translate(110,38)"><use href="#petal-shape" width="13" height="22" x="-6.5" y="-11" color="var(--petal)"/></g>
       </g>
+
+      <!-- hearts spawned here by JS when the cup is tapped -->
+      <g id="heartBurst"></g>
     </svg>
+    </button>
 
     <span class="eyebrow" id="heroEyebrow"></span>
     <h1 class="hero-title" id="heroTitle"></h1>
@@ -719,6 +843,80 @@ body.is-hidden .petal{
 
         <p class="quote-text" id="quoteText"></p>
         <p class="quote-signature" id="quoteSignature"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SUSHI DATE — a playful interlude. Three sushi pieces on a board;
+       tapping one wiggles it and reveals its hidden note below.
+       ========================================================================== -->
+  <section class="sushi-section reveal" data-reveal>
+    <div class="inner">
+      <p class="sushi-label" id="sushiLabel"></p>
+      <h2 class="sushi-title" id="sushiTitle"></h2>
+      <p class="sushi-message" id="sushiMessage"></p>
+
+      <div class="sushi-board-wrap">
+        <!-- wooden serving board + chopsticks, purely decorative -->
+        <svg class="sushi-board" viewBox="0 0 360 150" aria-hidden="true">
+          <ellipse cx="180" cy="140" rx="150" ry="8" fill="var(--mocha)" opacity="0.1"/>
+          <rect x="30" y="96" width="300" height="20" rx="10" fill="var(--mocha)"/>
+          <rect x="30" y="92" width="300" height="18" rx="9" fill="#A9743F"/>
+          <path d="M46,101 H314 M52,106 H308" stroke="var(--mocha)" stroke-width="1.2" opacity="0.35" fill="none"/>
+          <rect x="46" y="116" width="10" height="16" rx="3" fill="var(--mocha)"/>
+          <rect x="304" y="116" width="10" height="16" rx="3" fill="var(--mocha)"/>
+          <!-- chopsticks resting in front of the board, lower right -->
+          <g transform="rotate(-3 265 129)">
+            <rect x="205" y="121" width="120" height="5" rx="2.5" fill="var(--espresso)"/>
+            <rect x="210" y="129" width="120" height="5" rx="2.5" fill="var(--mocha)"/>
+          </g>
+        </svg>
+
+        <!-- the three tappable pieces, absolutely positioned over the board -->
+        <div class="sushi-row" role="group" aria-label="Three sushi pieces, each hiding a note">
+          <button class="sushi-piece" type="button" data-note="sushiNote1" aria-expanded="false" aria-label="Sushi piece one — tap to read its note">
+            <svg viewBox="0 0 90 78" aria-hidden="true">
+              <!-- maki roll: nori, rice, gold center -->
+              <ellipse cx="45" cy="42" rx="34" ry="32" fill="var(--espresso)"/>
+              <ellipse cx="45" cy="40" rx="34" ry="30" fill="#4A5A3A"/>
+              <ellipse cx="45" cy="38" rx="26" ry="22" fill="var(--petal)"/>
+              <ellipse cx="45" cy="38" rx="11" ry="9" fill="var(--gold)"/>
+              <circle cx="30" cy="30" r="1.8" fill="var(--latte)"/>
+              <circle cx="58" cy="28" r="1.8" fill="var(--latte)"/>
+              <circle cx="35" cy="50" r="1.8" fill="var(--latte)"/>
+              <circle cx="56" cy="48" r="1.8" fill="var(--latte)"/>
+            </svg>
+          </button>
+          <button class="sushi-piece" type="button" data-note="sushiNote2" aria-expanded="false" aria-label="Sushi piece two — tap to read its note">
+            <svg viewBox="0 0 90 78" aria-hidden="true">
+              <!-- tamago nigiri: rice pillow, golden egg, nori band -->
+              <ellipse cx="45" cy="56" rx="30" ry="16" fill="var(--petal)"/>
+              <circle cx="30" cy="52" r="1.8" fill="var(--latte)"/>
+              <circle cx="58" cy="56" r="1.8" fill="var(--latte)"/>
+              <rect x="14" y="22" width="62" height="26" rx="12" fill="var(--gold)"/>
+              <rect x="14" y="22" width="62" height="10" rx="5" fill="#D4B173"/>
+              <rect x="38" y="14" width="14" height="52" rx="4" fill="#4A5A3A"/>
+            </svg>
+          </button>
+          <button class="sushi-piece" type="button" data-note="sushiNote3" aria-expanded="false" aria-label="Sushi piece three — tap to read its note">
+            <svg viewBox="0 0 90 78" aria-hidden="true">
+              <!-- maki with a heart-shaped center, because of course -->
+              <ellipse cx="45" cy="42" rx="34" ry="32" fill="var(--espresso)"/>
+              <ellipse cx="45" cy="40" rx="34" ry="30" fill="#4A5A3A"/>
+              <ellipse cx="45" cy="38" rx="26" ry="22" fill="var(--petal)"/>
+              <path d="M45,50 C38,44 32,39 32,33 C32,28 36,26 39,26 C42,26 44,28 45,30 C46,28 48,26 51,26 C54,26 58,28 58,33 C58,39 52,44 45,50 Z" fill="var(--gold)"/>
+              <circle cx="28" cy="32" r="1.8" fill="var(--latte)"/>
+              <circle cx="61" cy="30" r="1.8" fill="var(--latte)"/>
+              <circle cx="33" cy="52" r="1.8" fill="var(--latte)"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- the tapped piece's note appears here -->
+      <div class="sushi-note" id="sushiNote" aria-live="polite" hidden>
+        <p class="sushi-note-text" id="sushiNoteText"></p>
       </div>
     </div>
   </section>
@@ -819,6 +1017,15 @@ const DEFAULT_CONTENT = {
   // Who the note is signed by
   quoteSignature: "— Wael",
 
+  // ---- SUSHI DATE ----
+  // The playful section: three sushi pieces, each hiding a note.
+  sushiLabel: "table for two",
+  sushiTitle: "Our little sushi date",
+  sushiMessage: "Pick a piece — each one is hiding a little note for you.",
+  sushiNote1: "You're my favorite person to share a plate with. And yes, you can have the last piece. Always.",
+  sushiNote2: "Soy sauce needs wasabi, coffee needs cream, and I need you. That's just science.",
+  sushiNote3: "Next sushi date is on me. This note is a coupon — no expiry date, redeemable forever.",
+
   // Footer closing line
   footerNote: "Made with love, one cup and one petal at a time.",
 
@@ -850,6 +1057,9 @@ function populateContent(content){
   set('gateTitle', content.gateTitle);
   set('gateMessage', content.gateMessage);
   set('gateButton', content.gateButtonText);
+  set('sushiLabel', content.sushiLabel);
+  set('sushiTitle', content.sushiTitle);
+  set('sushiMessage', content.sushiMessage);
 }
 
 /* ==========================================================================
@@ -956,6 +1166,71 @@ function initPasswordGate(content){
 }
 
 /* ==========================================================================
+   Sushi date — tap a piece: it wiggles, and its note pops in below.
+   Tapping the same piece again tucks the note away.
+   ========================================================================== */
+function initSushiDate(content){
+  const pieces = document.querySelectorAll('.sushi-piece');
+  const noteBox = document.getElementById('sushiNote');
+  const noteText = document.getElementById('sushiNoteText');
+  if(!noteBox || pieces.length === 0) return;
+
+  let openPiece = null;
+
+  pieces.forEach(piece => {
+    piece.addEventListener('click', () => {
+      piece.classList.remove('is-picked');
+      void piece.offsetWidth; // restart the wiggle on repeat taps
+      piece.classList.add('is-picked');
+
+      if(openPiece === piece){
+        noteBox.hidden = true;
+        piece.setAttribute('aria-expanded', 'false');
+        openPiece = null;
+        return;
+      }
+      pieces.forEach(p => p.setAttribute('aria-expanded', 'false'));
+      noteText.textContent = content[piece.dataset.note] || '';
+      noteBox.hidden = false;
+      piece.setAttribute('aria-expanded', 'true');
+      openPiece = piece;
+    });
+  });
+}
+
+/* ==========================================================================
+   Hero surprise — tapping the coffee cup puffs a few hearts out of the
+   steam. Pure delight, skipped under prefers-reduced-motion.
+   ========================================================================== */
+function initHeartBurst(){
+  const button = document.getElementById('heroSurprise');
+  const burst = document.getElementById('heartBurst');
+  if(!button || !burst) return;
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const colors = ['var(--gold)', 'var(--latte)', 'var(--cream-soft)'];
+  const HEART_PATH = 'M0,4 C-4,0 -7,-2.5 -7,-6 C-7,-9 -4.5,-10 -3,-10 C-1.5,-10 -0.5,-9 0,-7.5 C0.5,-9 1.5,-10 3,-10 C4.5,-10 7,-9 7,-6 C7,-2.5 4,0 0,4 Z';
+
+  button.addEventListener('click', () => {
+    if(reduceMotion) return;
+    for(let i = 0; i < 5; i++){
+      const heart = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      heart.setAttribute('d', HEART_PATH);
+      heart.setAttribute('fill', colors[i % colors.length]);
+      heart.setAttribute('class', 'burst-heart');
+      // spawn from the steam area above the cup, drifting apart as they rise
+      const x = 80 + Math.random() * 35;
+      const y = 45 + Math.random() * 25;
+      heart.setAttribute('transform', `translate(${x},${y}) scale(${0.9 + Math.random() * 0.6})`);
+      heart.style.setProperty('--hx', (Math.random() * 60 - 30).toFixed(0) + 'px');
+      heart.style.setProperty('--hr', (Math.random() * 40 - 20).toFixed(0) + 'deg');
+      burst.appendChild(heart);
+      heart.addEventListener('animationend', () => heart.remove());
+    }
+  });
+}
+
+/* ==========================================================================
    Load content.json (falling back to DEFAULT_CONTENT above if it can't be
    fetched) and only then populate the page and arm the password gate —
    this is the one part of the file that ties content.json to the rest of
@@ -990,6 +1265,8 @@ const CONTENT_JSON_FALLBACK_URL = 'https://raw.githubusercontent.com/wael23braid
   if(fetched) content = Object.assign({}, DEFAULT_CONTENT, fetched);
   populateContent(content);
   initPasswordGate(content);
+  initSushiDate(content);
+  initHeartBurst();
 })();
 </script>
 </body>
